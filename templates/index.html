@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AndroAI Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:'#6366f1',surface:'#1e1b4b',card:'#312e81'}}}}</script>
+<style>
+body{background:linear-gradient(135deg,#0f0a2e 0%,#1a1145 50%,#0d1b2a 100%);min-height:100vh}
+.card{background:rgba(49,46,129,0.45);backdrop-filter:blur(12px);border:1px solid rgba(99,102,241,0.15);border-radius:1rem}
+.glow{box-shadow:0 0 30px rgba(99,102,241,0.1)}
+.stat-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{padding:2px 10px;border-radius:9999px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+.badge-malicious{background:#ef4444;color:#fff}.badge-suspicious{background:#f59e0b;color:#000}
+.badge-clean{background:#22c55e;color:#fff}.badge-failed{background:#6b7280;color:#fff}.badge-corrupt{background:#a855f7;color:#fff}
+.badge-draft{background:#3b82f6;color:#fff}.badge-approved{background:#22c55e;color:#fff}
+.badge-rejected{background:#ef4444;color:#fff}.badge-retrohunting{background:#f59e0b;color:#000}
+.badge-superseded{background:#6b7280;color:#fff}
+table{width:100%;border-collapse:collapse}th{text-align:left;padding:10px 12px;border-bottom:1px solid rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em}
+td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#e2e8f0;font-size:0.85rem}
+tr:hover td{background:rgba(99,102,241,0.08)}
+.tab-btn{padding:8px 20px;border-radius:9999px;font-size:0.85rem;cursor:pointer;transition:all 0.2s}
+.tab-btn.active{background:#6366f1;color:#fff}.tab-btn:not(.active){background:transparent;color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+.tab-btn:not(.active):hover{background:rgba(99,102,241,0.15)}
+.pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+pre.rule-text{background:#0f0a2e;border:1px solid rgba(99,102,241,0.2);border-radius:0.5rem;padding:1rem;overflow-x:auto;font-size:0.8rem;color:#c4b5fd;max-height:400px;overflow-y:auto}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:50;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.5s infinite}
+</style>
+</head>
+<body class="text-gray-200 font-sans">
+<!-- Header -->
+<div class="max-w-7xl mx-auto px-6 py-6">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight"><span class="text-indigo-400">Andro</span><span class="text-purple-400">AI</span> <span class="text-gray-400 font-normal text-lg">Dashboard</span></h1>
+      <p class="text-sm text-gray-500 mt-1">Automated Android Malware Analysis Pipeline</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="live-dot"></span>
+      <span class="text-xs text-gray-400" id="last-update">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Hero stat cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" id="s-total">0</div>
+      <div class="text-xs text-gray-400 mt-1">Total Samples</div>
+    </div>
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" style="background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-malicious">0</div>
+      <div class="text-xs text-gray-400 mt-1">Malicious</div>
+    </div>
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-suspicious">0</div>
+      <div class="text-xs text-gray-400 mt-1">Suspicious</div>
+    </div>
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" style="background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-clean">0</div>
+      <div class="text-xs text-gray-400 mt-1">Clean</div>
+    </div>
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" id="s-yara">0</div>
+      <div class="text-xs text-gray-400 mt-1">YARA Created</div>
+    </div>
+    <div class="card glow p-5 text-center">
+      <div class="stat-num" id="s-snort">0</div>
+      <div class="text-xs text-gray-400 mt-1">Suricata Created</div>
+    </div>
+  </div>
+
+  <!-- Secondary stats row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="card p-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-lg">&#9201;</div>
+      <div><div class="text-lg font-bold" id="s-avgtime">0s</div><div class="text-xs text-gray-500">Avg Analysis Time</div></div>
+    </div>
+    <div class="card p-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-lg">&#128200;</div>
+      <div><div class="text-lg font-bold" id="s-tokens">0</div><div class="text-xs text-gray-500">LLM Tokens Used</div></div>
+    </div>
+    <div class="card p-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 text-lg">&#10060;</div>
+      <div><div class="text-lg font-bold" id="s-failed">0</div><div class="text-xs text-gray-500">Failed / Corrupt</div></div>
+    </div>
+    <div class="card p-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 text-lg">&#9989;</div>
+      <div><div class="text-lg font-bold" id="s-yara-approved">0</div><div class="text-xs text-gray-500">YARA Approved</div></div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="card p-6">
+      <h3 class="text-sm font-semibold text-gray-400 mb-4">Analysis Timeline</h3>
+      <canvas id="chart-timeline" height="200"></canvas>
+    </div>
+    <div class="card p-6">
+      <h3 class="text-sm font-semibold text-gray-400 mb-4">Pipeline Breakdown</h3>
+      <canvas id="chart-pipeline" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="flex gap-2 mb-6">
+    <button class="tab-btn active" onclick="switchTab('recent')">Recent Analyses</button>
+    <button class="tab-btn" onclick="switchTab('signatures')">Signatures</button>
+    <button class="tab-btn" onclick="switchTab('pipeline')">By Pipeline</button>
+  </div>
+
+  <!-- Tab: Recent Analyses -->
+  <div id="tab-recent" class="card p-6 mb-8">
+    <div class="overflow-x-auto">
+      <table><thead><tr>
+        <th>SHA256</th><th>Name</th><th>Family</th><th>Verdict</th><th>Risk</th>
+        <th>Pipeline</th><th>Time</th><th>YARA</th><th>Finished</th>
+      </tr></thead><tbody id="tbl-recent"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Tab: Signatures -->
+  <div id="tab-signatures" class="card p-6 mb-8" style="display:none">
+    <div class="flex gap-2 mb-4">
+      <button class="badge badge-draft cursor-pointer" onclick="filterSigs('')">All</button>
+      <button class="badge badge-draft cursor-pointer" onclick="filterSigs('draft')">Draft</button>
+      <button class="badge badge-approved cursor-pointer" onclick="filterSigs('approved')">Approved</button>
+      <button class="badge badge-rejected cursor-pointer" onclick="filterSigs('rejected')">Rejected</button>
+      <button class="badge badge-retrohunting cursor-pointer" onclick="filterSigs('retrohunting')">Retrohunting</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table><thead><tr>
+        <th>Rule Name</th><th>Family</th><th>Category</th><th>Status</th>
+        <th>Round</th><th>FPs</th><th>Updated</th><th>View</th>
+      </tr></thead><tbody id="tbl-sigs"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Tab: By Pipeline -->
+  <div id="tab-pipeline" class="card p-6 mb-8" style="display:none">
+    <div class="overflow-x-auto">
+      <table><thead><tr>
+        <th>Pipeline</th><th>Malicious</th><th>Suspicious</th><th>Clean</th>
+        <th>Total</th><th>YARA</th><th>Suricata</th><th>CIF</th>
+      </tr></thead><tbody id="tbl-pipeline"></tbody></table>
+    </div>
+  </div>
+
+</div><!-- /max-w-7xl -->
+
+<!-- Rule detail modal -->
+<div class="modal-overlay" id="rule-modal">
+  <div class="card p-8 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-indigo-300" id="modal-title">Rule</h3>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-4 text-sm" id="modal-meta"></div>
+    <pre class="rule-text" id="modal-rule"></pre>
+  </div>
+</div>
+
+<script>
+let timelineChart=null, pipelineChart=null;
+const REFRESH_MS=30000;
+
+// --- Utilities ---
+function badge(verdict){
+  const cls={malicious:'badge-malicious',suspicious:'badge-suspicious',clean:'badge-clean',
+    failed:'badge-failed',corrupt:'badge-corrupt',draft:'badge-draft',approved:'badge-approved',
+    rejected:'badge-rejected',retrohunting:'badge-retrohunting',superseded:'badge-superseded'};
+  return `<span class="badge ${cls[verdict]||'badge-failed'}">${verdict||'?'}</span>`;
+}
+function shortSha(s){return s?(s.substring(0,12)+'...'):'-';}
+function fmtTime(t){if(!t)return'-';try{const d=new Date(t);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return t;}}
+function fmtNum(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);}
+
+// --- Tab switching ---
+function switchTab(name){
+  ['recent','signatures','pipeline'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===name?'':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent.toLowerCase().includes(name.substring(0,4)));
+  });
+  if(name==='signatures')loadSignatures();
+  if(name==='pipeline')loadPipelineTable();
+}
+
+// --- Overview cards ---
+async function loadOverview(){
+  try{
+    const r=await fetch('/api/overview');const d=await r.json();
+    document.getElementById('s-total').textContent=fmtNum(d.samples.total);
+    document.getElementById('s-malicious').textContent=fmtNum(d.samples.malicious);
+    document.getElementById('s-suspicious').textContent=fmtNum(d.samples.suspicious);
+    document.getElementById('s-clean').textContent=fmtNum(d.samples.clean);
+    document.getElementById('s-yara').textContent=fmtNum(d.signatures.yara);
+    document.getElementById('s-snort').textContent=fmtNum(d.signatures.snort);
+    document.getElementById('s-avgtime').textContent=d.performance.avg_analysis_sec+'s';
+    document.getElementById('s-tokens').textContent=fmtNum(d.performance.total_llm_tokens);
+    document.getElementById('s-failed').textContent=fmtNum(d.samples.failed+d.samples.corrupt);
+    document.getElementById('s-yara-approved').textContent=fmtNum(d.yara_registry.approved);
+    document.getElementById('last-update').textContent='Updated '+new Date().toLocaleTimeString();
+  }catch(e){console.error('overview',e);}
+}
+
+// --- Timeline chart ---
+async function loadTimeline(){
+  try{
+    const r=await fetch('/api/timeline');const rows=await r.json();
+    const days={},verdicts=new Set();
+    rows.forEach(r=>{days[r.day]=days[r.day]||{};days[r.day][r.verdict]=(days[r.day][r.verdict]||0)+r.cnt;verdicts.add(r.verdict);});
+    const labels=Object.keys(days).sort();
+    const colors={malicious:'#ef4444',suspicious:'#f59e0b',clean:'#22c55e'};
+    const datasets=[...verdicts].map(v=>({
+      label:v,data:labels.map(d=>days[d][v]||0),
+      backgroundColor:colors[v]||'#6366f1',borderColor:colors[v]||'#6366f1',
+      borderWidth:2,tension:0.3,fill:true,
+    }));
+    if(timelineChart)timelineChart.destroy();
+    timelineChart=new Chart(document.getElementById('chart-timeline'),{
+      type:'line',data:{labels,datasets},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},
+        scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'rgba(99,102,241,0.1)'}},
+          y:{ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}
+    });
+  }catch(e){console.error('timeline',e);}
+}
+
+// --- Pipeline chart ---
+async function loadPipelineChart(){
+  try{
+    const r=await fetch('/api/pipeline_breakdown');const rows=await r.json();
+    const sources={};rows.forEach(r=>{
+      sources[r.pipeline_source]=sources[r.pipeline_source]||{malicious:0,suspicious:0,clean:0,total:0};
+      sources[r.pipeline_source][r.verdict]=(sources[r.pipeline_source][r.verdict]||0)+r.cnt;
+      sources[r.pipeline_source].total+=r.cnt;
+    });
+    const labels=Object.keys(sources);
+    const datasets=[
+      {label:'Malicious',data:labels.map(l=>sources[l].malicious||0),backgroundColor:'#ef4444'},
+      {label:'Suspicious',data:labels.map(l=>sources[l].suspicious||0),backgroundColor:'#f59e0b'},
+      {label:'Clean',data:labels.map(l=>sources[l].clean||0),backgroundColor:'#22c55e'},
+    ];
+    if(pipelineChart)pipelineChart.destroy();
+    pipelineChart=new Chart(document.getElementById('chart-pipeline'),{
+      type:'bar',data:{labels,datasets},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},
+        scales:{x:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}},
+          y:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}
+    });
+  }catch(e){console.error('pipeline chart',e);}
+}
+
+// --- Recent analyses table ---
+async function loadRecent(){
+  try{
+    const r=await fetch('/api/recent?limit=50');const rows=await r.json();
+    const tb=document.getElementById('tbl-recent');tb.innerHTML='';
+    rows.forEach(r=>{
+      const yr=r.yara_created?`<span class="text-indigo-300 text-xs">${r.yara_rule_name||'yes'}</span>`:'<span class="text-gray-600">-</span>';
+      tb.innerHTML+=`<tr>
+        <td class="font-mono text-xs text-indigo-300">${shortSha(r.sha256)}</td>
+        <td class="text-xs">${r.apk_name||'-'}</td>
+        <td class="text-xs">${r.family||'-'}</td>
+        <td>${badge(r.status==='done'?r.verdict:r.status)}</td>
+        <td class="text-center">${r.risk_score||0}</td>
+        <td class="text-xs text-gray-400">${r.pipeline_source||'-'}</td>
+        <td class="text-xs">${r.analysis_time_sec?r.analysis_time_sec.toFixed(1)+'s':'-'}</td>
+        <td>${yr}</td>
+        <td class="text-xs text-gray-500">${fmtTime(r.finished_at)}</td>
+      </tr>`;
+    });
+  }catch(e){console.error('recent',e);}
+}
+
+// --- Signatures table ---
+let sigFilter='';
+function filterSigs(s){sigFilter=s;loadSignatures();}
+async function loadSignatures(){
+  try{
+    const url=sigFilter?`/api/signatures?limit=100&status=${sigFilter}`:`/api/signatures?limit=100`;
+    const r=await fetch(url);const rows=await r.json();
+    const tb=document.getElementById('tbl-sigs');tb.innerHTML='';
+    rows.forEach(r=>{
+      tb.innerHTML+=`<tr>
+        <td class="text-xs font-mono text-indigo-300">${r.rule_name}</td>
+        <td class="text-xs">${r.family||'-'}</td>
+        <td class="text-xs">${r.category||'-'}</td>
+        <td>${badge(r.status)}</td>
+        <td class="text-center text-xs">${r.refinement_round}/${r.max_refinement_rounds}</td>
+        <td class="text-center text-xs">${r.fp_count}/${r.suspicious_fp_count}</td>
+        <td class="text-xs text-gray-500">${fmtTime(r.updated_at)}</td>
+        <td><button onclick="viewRule('${r.rule_id}')" class="text-indigo-400 hover:text-indigo-200 text-xs">View</button></td>
+      </tr>`;
+    });
+  }catch(e){console.error('sigs',e);}
+}
+
+// --- Pipeline table ---
+async function loadPipelineTable(){
+  try{
+    const r=await fetch('/api/pipeline_breakdown');const rows=await r.json();
+    const sources={};
+    rows.forEach(r=>{
+      const s=r.pipeline_source||'unknown';
+      sources[s]=sources[s]||{malicious:0,suspicious:0,clean:0,total:0,yara:0,snort:0,cif:0};
+      sources[s][r.verdict]=(sources[s][r.verdict]||0)+r.cnt;
+      sources[s].total+=r.cnt;
+      sources[s].yara+=(r.yara||0);sources[s].snort+=(r.snort||0);sources[s].cif+=(r.cif||0);
+    });
+    const tb=document.getElementById('tbl-pipeline');tb.innerHTML='';
+    Object.entries(sources).sort((a,b)=>b[1].total-a[1].total).forEach(([name,d])=>{
+      tb.innerHTML+=`<tr>
+        <td class="font-semibold text-indigo-300">${name}</td>
+        <td class="text-center text-red-400">${d.malicious}</td>
+        <td class="text-center text-yellow-400">${d.suspicious}</td>
+        <td class="text-center text-green-400">${d.clean}</td>
+        <td class="text-center font-bold">${d.total}</td>
+        <td class="text-center">${d.yara}</td>
+        <td class="text-center">${d.snort}</td>
+        <td class="text-center">${d.cif}</td>
+      </tr>`;
+    });
+  }catch(e){console.error('pipeline table',e);}
+}
+
+// --- Rule modal ---
+async function viewRule(ruleId){
+  try{
+    const r=await fetch(`/api/signature/${ruleId}`);const d=await r.json();
+    document.getElementById('modal-title').textContent=d.rule_name||ruleId;
+    document.getElementById('modal-meta').innerHTML=
+      `<div><span class="text-gray-500">Family:</span> ${d.family||'-'}</div>`+
+      `<div><span class="text-gray-500">Category:</span> ${d.category||'-'}</div>`+
+      `<div><span class="text-gray-500">Status:</span> ${badge(d.status)}</div>`+
+      `<div><span class="text-gray-500">Round:</span> ${d.refinement_round}/${d.max_refinement_rounds}</div>`+
+      `<div><span class="text-gray-500">FPs:</span> ${d.fp_count} confirmed, ${d.suspicious_fp_count} suspicious</div>`+
+      `<div><span class="text-gray-500">Created:</span> ${fmtTime(d.created_at)}</div>`;
+    document.getElementById('modal-rule').textContent=d.rule_text||'(no rule text)';
+    document.getElementById('rule-modal').classList.add('show');
+  }catch(e){console.error('rule detail',e);}
+}
+function closeModal(){document.getElementById('rule-modal').classList.remove('show');}
+document.getElementById('rule-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+// --- Init + auto-refresh ---
+async function refreshAll(){
+  await Promise.all([loadOverview(),loadTimeline(),loadPipelineChart(),loadRecent()]);
+}
+refreshAll();
+setInterval(refreshAll,REFRESH_MS);
+</script>
+</body>
+</html>
