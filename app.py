@@ -56,17 +56,16 @@ def api_overview():
     cc=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE cif_created=1")
     at=_s(LDB,"SELECT COALESCE(AVG(analysis_time_sec),0) FROM analyzed_samples WHERE status=?",("done",))
     tk=_s(LDB,"SELECT COALESCE(SUM(llm_total_tokens),0) FROM analyzed_samples")
-    yd=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source!=?",("draft","zintel"))+_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source IS NULL",("draft",))
-    ya=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source!=?",("approved","zintel"))+_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source IS NULL",("approved",))
-    yr=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source!=?",("rejected","zintel"))+_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source IS NULL",("rejected",))
-    yh=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source!=?",("retrohunting","zintel"))+_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND source IS NULL",("retrohunting",))
-    yt=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE source!=? OR source IS NULL",("zintel",))
+    def _yc(st):return _s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND (source!=? OR source IS NULL)",(st,"zintel"))
+    yd=_yc("draft");ya=_yc("approved");yr=_yc("rejected");yh=_yc("retrohunting");ys=_yc("superseded");yrf=_yc("refining")
+    yt=yd+ya+yr+yh+ys+yrf
     zintel_count=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE source=? AND status=?",("zintel","approved"))
     suri=len(glob.glob(os.path.join(SNORT_DIR,"*.rules"))) if os.path.isdir(SNORT_DIR) else 0
     return jsonify({"samples":{"total":total,"done":done,"malicious":mal,"suspicious":sus,
         "clean":cln,"failed":fail,"corrupt":cor},
         "signatures":{"yara":yc,"snort":sc,"cif":cc,"suricata_files":suri},
-        "yara_registry":{"total":yt,"draft":yd,"approved":ya,"rejected":yr,"retrohunting":yh,"zintel_approved":zintel_count},
+        "yara_registry":{"total":yt,"draft":yd,"approved":ya,"rejected":yr,
+            "retrohunting":yh,"superseded":ys,"refining":yrf,"zintel_approved":zintel_count},
         "performance":{"avg_analysis_sec":round(float(at),1),"total_llm_tokens":int(tk)}})
 
 @app.route("/api/pipeline_breakdown")
