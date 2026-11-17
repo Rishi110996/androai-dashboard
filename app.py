@@ -72,6 +72,17 @@ def api_overview():
             "retrohunting":yh,"superseded":ys,"refining":yrf,"zintel_approved":zintel_count},
         "performance":{"avg_analysis_sec":round(float(at),1),"total_llm_tokens":int(tk)}})
 
+@app.route("/api/overview_weekly")
+def api_overview_weekly():
+    w=request.args.get("days","7")
+    mal=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE verdict=? AND finished_at>=datetime('now','-"+w+" days')",("malicious",))
+    sus=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE verdict=? AND finished_at>=datetime('now','-"+w+" days')",("suspicious",))
+    cln=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE verdict=? AND finished_at>=datetime('now','-"+w+" days')",("clean",))
+    tot=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE finished_at>=datetime('now','-"+w+" days')")
+    yc=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE yara_created=1 AND finished_at>=datetime('now','-"+w+" days')")
+    sc=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE snort_created=1 AND finished_at>=datetime('now','-"+w+" days')")
+    return jsonify({"days":int(w),"total":tot,"malicious":mal,"suspicious":sus,"clean":cln,"yara":yc,"snort":sc})
+
 @app.route("/api/pipeline_breakdown")
 def api_pipeline_breakdown():
     return jsonify(_q(LDB,"SELECT pipeline_source,verdict,COUNT(*) as cnt,"

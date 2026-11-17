@@ -1,379 +1,342 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
+<html lang="en" class="dark"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>AndroAI Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:'#6366f1',surface:'#1e1b4b',card:'#312e81'}}}}</script>
+<script>tailwind.config={darkMode:'class'}</script>
 <style>
 body{background:linear-gradient(135deg,#0f0a2e 0%,#1a1145 50%,#0d1b2a 100%);min-height:100vh}
 .card{background:rgba(49,46,129,0.45);backdrop-filter:blur(12px);border:1px solid rgba(99,102,241,0.15);border-radius:1rem}
 .glow{box-shadow:0 0 30px rgba(99,102,241,0.1)}
-.stat-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sn{font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sn-red{background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sn-yel{background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sn-grn{background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .badge{padding:2px 10px;border-radius:9999px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
-.badge-malicious{background:#ef4444;color:#fff}.badge-suspicious{background:#f59e0b;color:#000}
-.badge-clean{background:#22c55e;color:#fff}.badge-failed{background:#6b7280;color:#fff}.badge-corrupt{background:#a855f7;color:#fff}
-.badge-draft{background:#3b82f6;color:#fff}.badge-approved{background:#22c55e;color:#fff}
-.badge-rejected{background:#ef4444;color:#fff}.badge-retrohunting{background:#f59e0b;color:#000}
-.badge-superseded{background:#6b7280;color:#fff}
-table{width:100%;border-collapse:collapse}th{text-align:left;padding:10px 12px;border-bottom:1px solid rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em}
+.b-mal{background:#ef4444;color:#fff}.b-sus{background:#f59e0b;color:#000}.b-cln{background:#22c55e;color:#fff}
+.b-fail{background:#6b7280;color:#fff}.b-cor{background:#a855f7;color:#fff}
+.b-draft{background:#3b82f6;color:#fff}.b-approved{background:#22c55e;color:#fff}
+.b-rejected{background:#ef4444;color:#fff}.b-retrohunting{background:#f59e0b;color:#000}
+.b-superseded{background:#6b7280;color:#fff}.b-refining{background:#8b5cf6;color:#fff}
+.b-crawler{background:#06b6d4;color:#fff}.b-virustotal{background:#ff6600;color:#fff}.b-pipeline{background:#6366f1;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;border-bottom:1px solid rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em}
 td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#e2e8f0;font-size:0.85rem}
 tr:hover td{background:rgba(99,102,241,0.08)}
-.tab-btn{padding:8px 20px;border-radius:9999px;font-size:0.85rem;cursor:pointer;transition:all 0.2s}
-.tab-btn.active{background:#6366f1;color:#fff}.tab-btn:not(.active){background:transparent;color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
-.tab-btn:not(.active):hover{background:rgba(99,102,241,0.15)}
-.pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-pre.rule-text{background:#0f0a2e;border:1px solid rgba(99,102,241,0.2);border-radius:0.5rem;padding:1rem;overflow-x:auto;font-size:0.8rem;color:#c4b5fd;max-height:400px;overflow-y:auto}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:50;display:none;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.5s infinite}
+.tb{padding:8px 20px;border-radius:9999px;font-size:0.85rem;cursor:pointer;transition:all 0.2s}
+.tb.active{background:#6366f1;color:#fff}.tb:not(.active){background:transparent;color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+.tb:not(.active):hover{background:rgba(99,102,241,0.15)}
+pre.rt{background:#0f0a2e;border:1px solid rgba(99,102,241,0.2);border-radius:0.5rem;padding:1rem;overflow-x:auto;font-size:0.8rem;color:#c4b5fd;max-height:400px;overflow-y:auto}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:50;display:none;align-items:center;justify-content:center}.mo.show{display:flex}
+.ld{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.sec-label{font-size:0.65rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em}
 </style>
 </head>
 <body class="text-gray-200 font-sans">
-<!-- Header -->
 <div class="max-w-7xl mx-auto px-6 py-6">
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="text-3xl font-extrabold tracking-tight"><span class="text-indigo-400">Andro</span><span class="text-purple-400">AI</span> <span class="text-gray-400 font-normal text-lg">Dashboard</span></h1>
-      <p class="text-sm text-gray-500 mt-1">Automated Android Malware Analysis Pipeline</p>
-    </div>
-    <div class="flex items-center gap-3">
-      <span class="live-dot"></span>
-      <span class="text-xs text-gray-400" id="last-update">Loading...</span>
-    </div>
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <div><h1 class="text-3xl font-extrabold"><span class="text-indigo-400">Andro</span><span class="text-purple-400">AI</span> <span class="text-gray-400 font-normal text-lg">Dashboard</span></h1>
+  <p class="text-sm text-gray-500 mt-1">Automated Android Malware Analysis Pipeline</p></div>
+  <div class="flex items-center gap-3"><span class="ld"></span><span class="text-xs text-gray-400" id="lu">Loading...</span></div>
+</div>
+
+<!-- ALL TIME stats -->
+<div class="sec-label mb-2">All Time</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-4">
+  <div class="card glow p-4 text-center"><div class="sn" id="at-total">0</div><div class="text-xs text-gray-400">Samples</div></div>
+  <div class="card glow p-4 text-center"><div class="sn sn-red" id="at-mal">0</div><div class="text-xs text-gray-400">Malicious</div></div>
+  <div class="card glow p-4 text-center"><div class="sn sn-yel" id="at-sus">0</div><div class="text-xs text-gray-400">Suspicious</div></div>
+  <div class="card glow p-4 text-center"><div class="sn sn-grn" id="at-cln">0</div><div class="text-xs text-gray-400">Clean</div></div>
+  <div class="card glow p-4 text-center"><div class="sn" id="at-yara">0</div><div class="text-xs text-gray-400">YARA Rules</div></div>
+  <div class="card glow p-4 text-center"><div class="sn" id="at-snort">0</div><div class="text-xs text-gray-400">Suricata</div></div>
+  <div class="card glow p-4 text-center"><div class="sn sn-grn" id="at-zintel">0</div><div class="text-xs text-gray-400">Zintel YARA</div></div>
+  <div class="card glow p-4 text-center"><div class="sn" id="at-fail">0</div><div class="text-xs text-gray-400">Failed</div></div>
+</div>
+
+<!-- LAST 7 DAYS stats -->
+<div class="sec-label mb-2">Last 7 Days</div>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-indigo-300" id="wk-total">0</div><div class="text-xs text-gray-500">Samples</div></div>
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-red-400" id="wk-mal">0</div><div class="text-xs text-gray-500">Malicious</div></div>
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-yellow-400" id="wk-sus">0</div><div class="text-xs text-gray-500">Suspicious</div></div>
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-green-400" id="wk-cln">0</div><div class="text-xs text-gray-500">Clean</div></div>
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-indigo-300" id="wk-yara">0</div><div class="text-xs text-gray-500">YARA</div></div>
+  <div class="card p-3 text-center"><div class="text-xl font-bold text-indigo-300" id="wk-snort">0</div><div class="text-xs text-gray-500">Suricata</div></div>
+</div>
+
+<!-- YARA Pipeline Status -->
+<div class="card p-4 mb-6">
+  <h3 class="sec-label mb-3">YARA Pipeline Status</h3>
+  <div class="flex flex-wrap gap-3">
+    <div class="flex items-center gap-1"><span class="badge b-draft" id="yr-draft">0</span><span class="text-xs text-gray-400">Draft</span></div>
+    <div class="flex items-center gap-1"><span class="badge b-retrohunting" id="yr-rh">0</span><span class="text-xs text-gray-400">Retrohunting</span></div>
+    <div class="flex items-center gap-1"><span class="badge b-refining" id="yr-rf">0</span><span class="text-xs text-gray-400">Refining</span></div>
+    <div class="flex items-center gap-1"><span class="badge b-approved" id="yr-ap">0</span><span class="text-xs text-gray-400">Approved</span></div>
+    <div class="flex items-center gap-1"><span class="badge b-rejected" id="yr-rj">0</span><span class="text-xs text-gray-400">Rejected</span></div>
+    <div class="flex items-center gap-1"><span class="badge b-superseded" id="yr-ss">0</span><span class="text-xs text-gray-400">Superseded</span></div>
+    <div class="ml-auto flex items-center gap-2"><span class="text-lg font-bold text-indigo-300" id="yr-tot">0</span><span class="text-xs text-gray-400">Total Pipeline</span></div>
   </div>
+</div>
 
-  <!-- Hero stat cards -->
-  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" id="s-total">0</div>
-      <div class="text-xs text-gray-400 mt-1">Total Samples</div>
-    </div>
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" style="background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-malicious">0</div>
-      <div class="text-xs text-gray-400 mt-1">Malicious</div>
-    </div>
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-suspicious">0</div>
-      <div class="text-xs text-gray-400 mt-1">Suspicious</div>
-    </div>
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" style="background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="s-clean">0</div>
-      <div class="text-xs text-gray-400 mt-1">Clean</div>
-    </div>
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" id="s-yara">0</div>
-      <div class="text-xs text-gray-400 mt-1">YARA Rules <span class="text-gray-600" id="s-yara-total"></span></div>
-    </div>
-    <div class="card glow p-5 text-center">
-      <div class="stat-num" id="s-snort">0</div>
-      <div class="text-xs text-gray-400 mt-1">Suricata Rules <span class="text-gray-600" id="s-snort-total"></span></div>
-    </div>
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="card p-5"><h3 class="sec-label mb-3">Analysis Timeline</h3><canvas id="ch-time" height="200"></canvas></div>
+  <div class="card p-5"><h3 class="sec-label mb-3">Pipeline Breakdown</h3><canvas id="ch-pipe" height="200"></canvas></div>
+</div>
+
+<!-- Tabs -->
+<div class="flex gap-2 mb-4 flex-wrap">
+  <button class="tb active" onclick="stab('recent')">Recent Analyses</button>
+  <button class="tb" onclick="stab('yara')">YARA Signatures</button>
+  <button class="tb" onclick="stab('suricata')">Suricata Rules</button>
+  <button class="tb" onclick="stab('pipe')">By Pipeline</button>
+</div>
+
+<!-- Tab: Recent -->
+<div id="tab-recent" class="card p-5 mb-6"><div class="overflow-x-auto">
+  <table><thead><tr><th>SHA256</th><th>Name</th><th>Family</th><th>Verdict</th><th>Risk</th><th>Pipeline</th><th>Time</th><th>YARA</th><th>Suricata</th><th>Finished</th></tr></thead>
+  <tbody id="tb-recent"></tbody></table>
+</div></div>
+
+<!-- Tab: YARA -->
+<div id="tab-yara" class="card p-5 mb-6" style="display:none">
+  <div class="flex gap-2 mb-3 flex-wrap">
+    <button class="badge b-draft cursor-pointer" onclick="fSig('')">All</button>
+    <button class="badge b-draft cursor-pointer" onclick="fSig('draft')">Draft</button>
+    <button class="badge b-retrohunting cursor-pointer" onclick="fSig('retrohunting')">Retrohunting</button>
+    <button class="badge b-refining cursor-pointer" onclick="fSig('refining')">Refining</button>
+    <button class="badge b-approved cursor-pointer" onclick="fSig('approved')">Approved</button>
+    <button class="badge b-rejected cursor-pointer" onclick="fSig('rejected')">Rejected</button>
   </div>
-
-  <!-- Secondary stats row -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    <div class="card p-4 flex items-center gap-4">
-      <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-lg">&#9201;</div>
-      <div><div class="text-lg font-bold" id="s-avgtime">0s</div><div class="text-xs text-gray-500">Avg Analysis Time</div></div>
-    </div>
-    <div class="card p-4 flex items-center gap-4">
-      <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-lg">&#128200;</div>
-      <div><div class="text-lg font-bold" id="s-tokens">0</div><div class="text-xs text-gray-500">LLM Tokens Used</div></div>
-    </div>
-    <div class="card p-4 flex items-center gap-4">
-      <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 text-lg">&#10060;</div>
-      <div><div class="text-lg font-bold" id="s-failed">0</div><div class="text-xs text-gray-500">Failed / Corrupt</div></div>
-    </div>
-    <div class="card p-4 flex items-center gap-4">
-      <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 text-lg">&#9989;</div>
-      <div><div class="text-lg font-bold" id="s-yara-approved">0</div><div class="text-xs text-gray-500">Zintel YARA</div></div>
-    </div>
+  <div class="overflow-x-auto">
+    <table><thead><tr><th>Rule Name</th><th>Family</th><th>Source</th><th>Status</th><th>Round</th><th>FPs</th><th>Reason</th><th>Updated</th><th></th></tr></thead>
+    <tbody id="tb-yara"></tbody></table>
   </div>
+</div>
 
-  <!-- YARA Pipeline Status -->
-  <div class="card p-5 mb-8">
-    <h3 class="text-sm font-semibold text-gray-400 mb-3">YARA Pipeline Status</h3>
-    <div class="flex flex-wrap gap-4">
-      <div class="flex items-center gap-2"><span class="badge badge-draft" id="yr-draft">0</span><span class="text-xs text-gray-400">Draft</span></div>
-      <div class="flex items-center gap-2"><span class="badge badge-retrohunting" id="yr-retrohunting">0</span><span class="text-xs text-gray-400">Retrohunting</span></div>
-      <div class="flex items-center gap-2"><span class="badge" style="background:#8b5cf6;color:#fff" id="yr-refining">0</span><span class="text-xs text-gray-400">Refining</span></div>
-      <div class="flex items-center gap-2"><span class="badge badge-approved" id="yr-approved">0</span><span class="text-xs text-gray-400">Approved</span></div>
-      <div class="flex items-center gap-2"><span class="badge badge-rejected" id="yr-rejected">0</span><span class="text-xs text-gray-400">Rejected</span></div>
-      <div class="flex items-center gap-2"><span class="badge badge-superseded" id="yr-superseded">0</span><span class="text-xs text-gray-400">Superseded</span></div>
-      <div class="flex items-center gap-2 ml-auto"><span class="text-lg font-bold text-indigo-300" id="yr-total">0</span><span class="text-xs text-gray-400">Total Pipeline YARA</span></div>
-    </div>
+<!-- Tab: Suricata -->
+<div id="tab-suricata" class="card p-5 mb-6" style="display:none">
+  <div class="overflow-x-auto">
+    <table><thead><tr><th>File Name</th><th>Size</th><th>Modified</th><th></th></tr></thead>
+    <tbody id="tb-suri"></tbody></table>
   </div>
+</div>
 
-  <!-- Charts row -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <div class="card p-6">
-      <h3 class="text-sm font-semibold text-gray-400 mb-4">Analysis Timeline</h3>
-      <canvas id="chart-timeline" height="200"></canvas>
-    </div>
-    <div class="card p-6">
-      <h3 class="text-sm font-semibold text-gray-400 mb-4">Pipeline Breakdown</h3>
-      <canvas id="chart-pipeline" height="200"></canvas>
-    </div>
-  </div>
+<!-- Tab: Pipeline -->
+<div id="tab-pipe" class="card p-5 mb-6" style="display:none"><div class="overflow-x-auto">
+  <table><thead><tr><th>Pipeline</th><th>Malicious</th><th>Suspicious</th><th>Clean</th><th>Total</th><th>YARA</th><th>Suricata</th><th>CIF</th></tr></thead>
+  <tbody id="tb-pipe"></tbody></table>
+</div></div>
 
-  <!-- Tab navigation -->
-  <div class="flex gap-2 mb-6">
-    <button class="tab-btn active" onclick="switchTab('recent')">Recent Analyses</button>
-    <button class="tab-btn" onclick="switchTab('signatures')">Signatures</button>
-    <button class="tab-btn" onclick="switchTab('pipeline')">By Pipeline</button>
-  </div>
+</div><!-- /max-w -->
 
-  <!-- Tab: Recent Analyses -->
-  <div id="tab-recent" class="card p-6 mb-8">
-    <div class="overflow-x-auto">
-      <table><thead><tr>
-        <th>SHA256</th><th>Name</th><th>Family</th><th>Verdict</th><th>Risk</th>
-        <th>Pipeline</th><th>Time</th><th>YARA</th><th>Finished</th>
-      </tr></thead><tbody id="tbl-recent"></tbody></table>
-    </div>
-  </div>
-
-  <!-- Tab: Signatures -->
-  <div id="tab-signatures" class="card p-6 mb-8" style="display:none">
-    <div class="flex gap-2 mb-4">
-      <button class="badge badge-draft cursor-pointer" onclick="filterSigs('')">All</button>
-      <button class="badge badge-draft cursor-pointer" onclick="filterSigs('draft')">Draft</button>
-      <button class="badge badge-approved cursor-pointer" onclick="filterSigs('approved')">Approved</button>
-      <button class="badge badge-rejected cursor-pointer" onclick="filterSigs('rejected')">Rejected</button>
-      <button class="badge badge-retrohunting cursor-pointer" onclick="filterSigs('retrohunting')">Retrohunting</button>
-    </div>
-    <div class="overflow-x-auto">
-      <table><thead><tr>
-        <th>Rule Name</th><th>Family</th><th>Category</th><th>Status</th>
-        <th>Round</th><th>FPs</th><th>Updated</th><th>View</th>
-      </tr></thead><tbody id="tbl-sigs"></tbody></table>
-    </div>
-  </div>
-
-  <!-- Tab: By Pipeline -->
-  <div id="tab-pipeline" class="card p-6 mb-8" style="display:none">
-    <div class="overflow-x-auto">
-      <table><thead><tr>
-        <th>Pipeline</th><th>Malicious</th><th>Suspicious</th><th>Clean</th>
-        <th>Total</th><th>YARA</th><th>Suricata</th><th>CIF</th>
-      </tr></thead><tbody id="tbl-pipeline"></tbody></table>
-    </div>
-  </div>
-
-</div><!-- /max-w-7xl -->
-
-<!-- Rule detail modal -->
-<div class="modal-overlay" id="rule-modal">
-  <div class="card p-8 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+<!-- Rule Modal -->
+<div class="mo" id="rmo">
+  <div class="card p-6 max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold text-indigo-300" id="modal-title">Rule</h3>
-      <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+      <h3 class="text-lg font-bold text-indigo-300" id="rm-title">Rule</h3>
+      <button onclick="cmo()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
     </div>
-    <div class="grid grid-cols-2 gap-3 mb-4 text-sm" id="modal-meta"></div>
-    <pre class="rule-text" id="modal-rule"></pre>
+    <div class="grid grid-cols-2 gap-3 mb-4 text-sm" id="rm-meta"></div>
+    <div id="rm-versions" class="mb-4"></div>
+    <h4 class="text-xs text-gray-500 mb-2">Current Rule Text</h4>
+    <pre class="rt" id="rm-rule"></pre>
+  </div>
+</div>
+
+<!-- Suricata Modal -->
+<div class="mo" id="smo">
+  <div class="card p-6 max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-indigo-300" id="sm-title">Rule</h3>
+      <button onclick="document.getElementById('smo').classList.remove('show')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+    </div>
+    <pre class="rt" id="sm-rule"></pre>
   </div>
 </div>
 
 <script>
-let timelineChart=null, pipelineChart=null;
-const REFRESH_MS=30000;
+let tC=null,pC=null;
+const R=30000;
+function B(v){const m={malicious:'b-mal',suspicious:'b-sus',clean:'b-cln',failed:'b-fail',corrupt:'b-cor',draft:'b-draft',approved:'b-approved',rejected:'b-rejected',retrohunting:'b-retrohunting',superseded:'b-superseded',refining:'b-refining',crawler:'b-crawler',virustotal:'b-virustotal',pipeline:'b-pipeline'};return `<span class="badge ${m[v]||'b-fail'}">${v||'?'}</span>`;}
+function S(s){return s?(s.substring(0,12)+'...'):'-';}
+function T(t){if(!t)return'-';try{const d=new Date(t);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return t;}}
+function N(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n||0);}
+function stab(n){['recent','yara','suricata','pipe'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===n?'':'none';});document.querySelectorAll('.tb').forEach(b=>{b.classList.toggle('active',b.textContent.toLowerCase().includes(n.substring(0,4)));});if(n==='yara')lSigs();if(n==='suricata')lSuri();if(n==='pipe')lPipe();}
 
-// --- Utilities ---
-function badge(verdict){
-  const cls={malicious:'badge-malicious',suspicious:'badge-suspicious',clean:'badge-clean',
-    failed:'badge-failed',corrupt:'badge-corrupt',draft:'badge-draft',approved:'badge-approved',
-    rejected:'badge-rejected',retrohunting:'badge-retrohunting',superseded:'badge-superseded'};
-  return `<span class="badge ${cls[verdict]||'badge-failed'}">${verdict||'?'}</span>`;
-}
-function shortSha(s){return s?(s.substring(0,12)+'...'):'-';}
-function fmtTime(t){if(!t)return'-';try{const d=new Date(t);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return t;}}
-function fmtNum(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);}
-
-// --- Tab switching ---
-function switchTab(name){
-  ['recent','signatures','pipeline'].forEach(t=>{
-    document.getElementById('tab-'+t).style.display=t===name?'':'none';
-  });
-  document.querySelectorAll('.tab-btn').forEach(b=>{
-    b.classList.toggle('active',b.textContent.toLowerCase().includes(name.substring(0,4)));
-  });
-  if(name==='signatures')loadSignatures();
-  if(name==='pipeline')loadPipelineTable();
-}
-
-// --- Overview cards ---
-async function loadOverview(){
+async function lOver(){
   try{
     const r=await fetch('/api/overview');const d=await r.json();
-    document.getElementById('s-total').textContent=fmtNum(d.samples.total);
-    document.getElementById('s-malicious').textContent=fmtNum(d.samples.malicious);
-    document.getElementById('s-suspicious').textContent=fmtNum(d.samples.suspicious);
-    document.getElementById('s-clean').textContent=fmtNum(d.samples.clean);
-    document.getElementById('s-yara').textContent=fmtNum(d.signatures.yara_files||d.signatures.yara);
-    document.getElementById('s-snort').textContent=fmtNum(d.signatures.suricata_files||d.signatures.snort);
-    document.getElementById('s-avgtime').textContent=d.performance.avg_analysis_sec+'s';
-    document.getElementById('s-tokens').textContent=fmtNum(d.performance.total_llm_tokens);
-    document.getElementById('s-failed').textContent=fmtNum(d.samples.failed+d.samples.corrupt);
-    document.getElementById('s-yara-approved').textContent=fmtNum(d.yara_registry.zintel_approved||0);
+    document.getElementById('at-total').textContent=N(d.samples.total);
+    document.getElementById('at-mal').textContent=N(d.samples.malicious);
+    document.getElementById('at-sus').textContent=N(d.samples.suspicious);
+    document.getElementById('at-cln').textContent=N(d.samples.clean);
+    document.getElementById('at-yara').textContent=N(d.signatures.yara_files||d.signatures.yara);
+    document.getElementById('at-snort').textContent=N(d.signatures.suricata_files||d.signatures.snort);
+    document.getElementById('at-zintel').textContent=N(d.yara_registry.zintel_approved);
+    document.getElementById('at-fail').textContent=N(d.samples.failed+d.samples.corrupt);
     document.getElementById('yr-draft').textContent=d.yara_registry.draft||0;
-    document.getElementById('yr-retrohunting').textContent=d.yara_registry.retrohunting||0;
-    document.getElementById('yr-refining').textContent=d.yara_registry.refining||0;
-    document.getElementById('yr-approved').textContent=d.yara_registry.approved||0;
-    document.getElementById('yr-rejected').textContent=d.yara_registry.rejected||0;
-    document.getElementById('yr-superseded').textContent=d.yara_registry.superseded||0;
-    document.getElementById('yr-total').textContent=d.yara_registry.total||0;
-    document.getElementById('last-update').textContent='Updated '+new Date().toLocaleTimeString();
-  }catch(e){console.error('overview',e);}
+    document.getElementById('yr-rh').textContent=d.yara_registry.retrohunting||0;
+    document.getElementById('yr-rf').textContent=d.yara_registry.refining||0;
+    document.getElementById('yr-ap').textContent=d.yara_registry.approved||0;
+    document.getElementById('yr-rj').textContent=d.yara_registry.rejected||0;
+    document.getElementById('yr-ss').textContent=d.yara_registry.superseded||0;
+    document.getElementById('yr-tot').textContent=d.yara_registry.total||0;
+    document.getElementById('lu').textContent='Updated '+new Date().toLocaleTimeString();
+  }catch(e){console.error('over',e);}
 }
 
-// --- Timeline chart ---
-async function loadTimeline(){
+async function lWeekly(){
+  try{
+    const r=await fetch('/api/overview_weekly?days=7');const d=await r.json();
+    document.getElementById('wk-total').textContent=N(d.total);
+    document.getElementById('wk-mal').textContent=N(d.malicious);
+    document.getElementById('wk-sus').textContent=N(d.suspicious);
+    document.getElementById('wk-cln').textContent=N(d.clean);
+    document.getElementById('wk-yara').textContent=N(d.yara);
+    document.getElementById('wk-snort').textContent=N(d.snort);
+  }catch(e){console.error('weekly',e);}
+}
+
+async function lTime(){
   try{
     const r=await fetch('/api/timeline');const rows=await r.json();
-    const days={},verdicts=new Set();
-    rows.forEach(r=>{days[r.day]=days[r.day]||{};days[r.day][r.verdict]=(days[r.day][r.verdict]||0)+r.cnt;verdicts.add(r.verdict);});
-    const labels=Object.keys(days).sort();
-    const colors={malicious:'#ef4444',suspicious:'#f59e0b',clean:'#22c55e'};
-    const datasets=[...verdicts].map(v=>({
-      label:v,data:labels.map(d=>days[d][v]||0),
-      backgroundColor:colors[v]||'#6366f1',borderColor:colors[v]||'#6366f1',
-      borderWidth:2,tension:0.3,fill:true,
-    }));
-    if(timelineChart)timelineChart.destroy();
-    timelineChart=new Chart(document.getElementById('chart-timeline'),{
-      type:'line',data:{labels,datasets},
-      options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},
-        scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'rgba(99,102,241,0.1)'}},
-          y:{ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}
-    });
-  }catch(e){console.error('timeline',e);}
+    const days={},vs=new Set();
+    rows.forEach(r=>{days[r.day]=days[r.day]||{};days[r.day][r.verdict]=(days[r.day][r.verdict]||0)+r.cnt;vs.add(r.verdict);});
+    const lb=Object.keys(days).sort();
+    const co={malicious:'#ef4444',suspicious:'#f59e0b',clean:'#22c55e'};
+    const ds=[...vs].map(v=>({label:v,data:lb.map(d=>days[d][v]||0),backgroundColor:co[v]||'#6366f1',borderColor:co[v]||'#6366f1',borderWidth:2,tension:0.3,fill:true}));
+    if(tC)tC.destroy();
+    tC=new Chart(document.getElementById('ch-time'),{type:'line',data:{labels:lb,datasets:ds},options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'rgba(99,102,241,0.1)'}},y:{ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}});
+  }catch(e){console.error('time',e);}
 }
 
-// --- Pipeline chart ---
-async function loadPipelineChart(){
+async function lPipeChart(){
   try{
     const r=await fetch('/api/pipeline_breakdown');const rows=await r.json();
-    const sources={};rows.forEach(r=>{
-      sources[r.pipeline_source]=sources[r.pipeline_source]||{malicious:0,suspicious:0,clean:0,total:0};
-      sources[r.pipeline_source][r.verdict]=(sources[r.pipeline_source][r.verdict]||0)+r.cnt;
-      sources[r.pipeline_source].total+=r.cnt;
-    });
-    const labels=Object.keys(sources);
-    const datasets=[
-      {label:'Malicious',data:labels.map(l=>sources[l].malicious||0),backgroundColor:'#ef4444'},
-      {label:'Suspicious',data:labels.map(l=>sources[l].suspicious||0),backgroundColor:'#f59e0b'},
-      {label:'Clean',data:labels.map(l=>sources[l].clean||0),backgroundColor:'#22c55e'},
-    ];
-    if(pipelineChart)pipelineChart.destroy();
-    pipelineChart=new Chart(document.getElementById('chart-pipeline'),{
-      type:'bar',data:{labels,datasets},
-      options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},
-        scales:{x:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}},
-          y:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}
-    });
-  }catch(e){console.error('pipeline chart',e);}
+    const sr={};rows.forEach(r=>{sr[r.pipeline_source]=sr[r.pipeline_source]||{malicious:0,suspicious:0,clean:0};sr[r.pipeline_source][r.verdict]=(sr[r.pipeline_source][r.verdict]||0)+r.cnt;});
+    const lb=Object.keys(sr);
+    const ds=[{label:'Malicious',data:lb.map(l=>sr[l].malicious||0),backgroundColor:'#ef4444'},{label:'Suspicious',data:lb.map(l=>sr[l].suspicious||0),backgroundColor:'#f59e0b'},{label:'Clean',data:lb.map(l=>sr[l].clean||0),backgroundColor:'#22c55e'}];
+    if(pC)pC.destroy();
+    pC=new Chart(document.getElementById('ch-pipe'),{type:'bar',data:{labels:lb,datasets:ds},options:{responsive:true,plugins:{legend:{labels:{color:'#a5b4fc',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}},y:{stacked:true,ticks:{color:'#6b7280'},grid:{color:'rgba(99,102,241,0.1)'}}}}});
+  }catch(e){console.error('pch',e);}
 }
 
-// --- Recent analyses table ---
-async function loadRecent(){
+async function lRecent(){
   try{
     const r=await fetch('/api/recent?limit=50');const rows=await r.json();
-    const tb=document.getElementById('tbl-recent');tb.innerHTML='';
+    const tb=document.getElementById('tb-recent');tb.innerHTML='';
     rows.forEach(r=>{
       const yr=r.yara_created?`<span class="text-indigo-300 text-xs">${r.yara_rule_name||'yes'}</span>`:'<span class="text-gray-600">-</span>';
-      tb.innerHTML+=`<tr>
-        <td class="font-mono text-xs text-indigo-300">${shortSha(r.sha256)}</td>
-        <td class="text-xs">${r.apk_name||'-'}</td>
-        <td class="text-xs">${r.family||'-'}</td>
-        <td>${badge(r.status==='done'?r.verdict:r.status)}</td>
-        <td class="text-center">${r.risk_score||0}</td>
-        <td class="text-xs text-gray-400">${r.pipeline_source||'-'}</td>
-        <td class="text-xs">${r.analysis_time_sec?r.analysis_time_sec.toFixed(1)+'s':'-'}</td>
-        <td>${yr}</td>
-        <td class="text-xs text-gray-500">${fmtTime(r.finished_at)}</td>
-      </tr>`;
+      const sn=r.snort_created?'<span class="text-cyan-300 text-xs">yes</span>':'<span class="text-gray-600">-</span>';
+      tb.innerHTML+=`<tr><td class="font-mono text-xs text-indigo-300">${S(r.sha256)}</td><td class="text-xs">${r.apk_name||'-'}</td><td class="text-xs">${r.family||'-'}</td><td>${B(r.status==='done'?r.verdict:r.status)}</td><td class="text-center">${r.risk_score||0}</td><td class="text-xs text-gray-400">${r.pipeline_source||'-'}</td><td class="text-xs">${r.analysis_time_sec?r.analysis_time_sec.toFixed(1)+'s':'-'}</td><td>${yr}</td><td>${sn}</td><td class="text-xs text-gray-500">${T(r.finished_at)}</td></tr>`;
     });
   }catch(e){console.error('recent',e);}
 }
 
-// --- Signatures table ---
-let sigFilter='';
-function filterSigs(s){sigFilter=s;loadSignatures();}
-async function loadSignatures(){
+let sf='';
+function fSig(s){sf=s;lSigs();}
+async function lSigs(){
   try{
-    const url=sigFilter?`/api/signatures?limit=100&status=${sigFilter}`:`/api/signatures?limit=100`;
+    const url=sf?`/api/signatures?limit=100&status=${sf}`:`/api/signatures?limit=100`;
     const r=await fetch(url);const rows=await r.json();
-    const tb=document.getElementById('tbl-sigs');tb.innerHTML='';
+    const tb=document.getElementById('tb-yara');tb.innerHTML='';
     rows.forEach(r=>{
-      tb.innerHTML+=`<tr>
-        <td class="text-xs font-mono text-indigo-300">${r.rule_name}</td>
-        <td class="text-xs">${r.family||'-'}</td>
-        <td class="text-xs">${r.category||'-'}</td>
-        <td>${badge(r.status)}</td>
-        <td class="text-center text-xs">${r.refinement_round}/${r.max_refinement_rounds}</td>
-        <td class="text-center text-xs">${r.fp_count}/${r.suspicious_fp_count}</td>
-        <td class="text-xs text-gray-500">${fmtTime(r.updated_at)}</td>
-        <td><button onclick="viewRule('${r.rule_id}')" class="text-indigo-400 hover:text-indigo-200 text-xs">View</button></td>
-      </tr>`;
+      const src=r.source?B(r.source):'-';
+      const reason=r.rejection_reason?`<span class="text-xs text-red-300" title="${r.rejection_reason}">${(r.rejection_reason||'').substring(0,30)}...</span>`:'-';
+      tb.innerHTML+=`<tr><td class="text-xs font-mono text-indigo-300">${r.rule_name}</td><td class="text-xs">${r.family||'-'}</td><td>${src}</td><td>${B(r.status)}</td><td class="text-center text-xs">R${r.refinement_round}/${r.max_refinement_rounds}</td><td class="text-center text-xs">${r.fp_count||0}c/${r.suspicious_fp_count||0}s</td><td class="text-xs">${reason}</td><td class="text-xs text-gray-500">${T(r.updated_at)}</td><td><button onclick="vRule('${r.rule_id}')" class="text-indigo-400 hover:text-indigo-200 text-xs">View</button></td></tr>`;
     });
   }catch(e){console.error('sigs',e);}
 }
 
-// --- Pipeline table ---
-async function loadPipelineTable(){
+async function lSuri(){
+  try{
+    const r=await fetch('/api/suricata_rules');const rows=await r.json();
+    const tb=document.getElementById('tb-suri');tb.innerHTML='';
+    rows.forEach(r=>{
+      const sz=r.size_bytes>=1024?(r.size_bytes/1024).toFixed(1)+'KB':r.size_bytes+'B';
+      const mt=r.modified_at?new Date(r.modified_at*1000).toLocaleString():'-';
+      tb.innerHTML+=`<tr><td class="text-xs font-mono text-cyan-300">${r.filename}</td><td class="text-xs">${sz}</td><td class="text-xs text-gray-500">${mt}</td><td><button onclick="vSuri('${r.filename}')" class="text-cyan-400 hover:text-cyan-200 text-xs">View</button></td></tr>`;
+    });
+  }catch(e){console.error('suri',e);}
+}
+let _suriCache={};
+async function vSuri(fn){
+  if(!_suriCache[fn]){
+    const r=await fetch('/api/suricata_rules');const rows=await r.json();
+    rows.forEach(r=>{_suriCache[r.filename]=r.content;});
+  }
+  document.getElementById('sm-title').textContent=fn;
+  document.getElementById('sm-rule').textContent=_suriCache[fn]||'(not found)';
+  document.getElementById('smo').classList.add('show');
+}
+
+async function lPipe(){
   try{
     const r=await fetch('/api/pipeline_breakdown');const rows=await r.json();
-    const sources={};
-    rows.forEach(r=>{
-      const s=r.pipeline_source||'unknown';
-      sources[s]=sources[s]||{malicious:0,suspicious:0,clean:0,total:0,yara:0,snort:0,cif:0};
-      sources[s][r.verdict]=(sources[s][r.verdict]||0)+r.cnt;
-      sources[s].total+=r.cnt;
-      sources[s].yara+=(r.yara||0);sources[s].snort+=(r.snort||0);sources[s].cif+=(r.cif||0);
+    const sr={};rows.forEach(r=>{const s=r.pipeline_source||'unknown';sr[s]=sr[s]||{malicious:0,suspicious:0,clean:0,total:0,yara:0,snort:0,cif:0};sr[s][r.verdict]=(sr[s][r.verdict]||0)+r.cnt;sr[s].total+=r.cnt;sr[s].yara+=(r.yara||0);sr[s].snort+=(r.snort||0);sr[s].cif+=(r.cif||0);});
+    const tb=document.getElementById('tb-pipe');tb.innerHTML='';
+    Object.entries(sr).sort((a,b)=>b[1].total-a[1].total).forEach(([nm,d])=>{
+      tb.innerHTML+=`<tr><td class="font-semibold text-indigo-300">${nm}</td><td class="text-center text-red-400">${d.malicious}</td><td class="text-center text-yellow-400">${d.suspicious}</td><td class="text-center text-green-400">${d.clean}</td><td class="text-center font-bold">${d.total}</td><td class="text-center">${d.yara}</td><td class="text-center">${d.snort}</td><td class="text-center">${d.cif}</td></tr>`;
     });
-    const tb=document.getElementById('tbl-pipeline');tb.innerHTML='';
-    Object.entries(sources).sort((a,b)=>b[1].total-a[1].total).forEach(([name,d])=>{
-      tb.innerHTML+=`<tr>
-        <td class="font-semibold text-indigo-300">${name}</td>
-        <td class="text-center text-red-400">${d.malicious}</td>
-        <td class="text-center text-yellow-400">${d.suspicious}</td>
-        <td class="text-center text-green-400">${d.clean}</td>
-        <td class="text-center font-bold">${d.total}</td>
-        <td class="text-center">${d.yara}</td>
-        <td class="text-center">${d.snort}</td>
-        <td class="text-center">${d.cif}</td>
-      </tr>`;
-    });
-  }catch(e){console.error('pipeline table',e);}
+  }catch(e){console.error('pipe',e);}
 }
 
-// --- Rule modal ---
-async function viewRule(ruleId){
+async function vRule(id){
   try{
-    const r=await fetch(`/api/signature/${ruleId}`);const d=await r.json();
-    document.getElementById('modal-title').textContent=d.rule_name||ruleId;
-    document.getElementById('modal-meta').innerHTML=
+    const r=await fetch(`/api/signature/${id}`);const d=await r.json();
+    document.getElementById('rm-title').textContent=d.rule_name||id;
+    const src=d.source?B(d.source):'';
+    document.getElementById('rm-meta').innerHTML=
       `<div><span class="text-gray-500">Family:</span> ${d.family||'-'}</div>`+
       `<div><span class="text-gray-500">Category:</span> ${d.category||'-'}</div>`+
-      `<div><span class="text-gray-500">Status:</span> ${badge(d.status)}</div>`+
-      `<div><span class="text-gray-500">Round:</span> ${d.refinement_round}/${d.max_refinement_rounds}</div>`+
-      `<div><span class="text-gray-500">FPs:</span> ${d.fp_count} confirmed, ${d.suspicious_fp_count} suspicious</div>`+
-      `<div><span class="text-gray-500">Created:</span> ${fmtTime(d.created_at)}</div>`;
-    document.getElementById('modal-rule').textContent=d.rule_text||'(no rule text)';
-    document.getElementById('rule-modal').classList.add('show');
-  }catch(e){console.error('rule detail',e);}
+      `<div><span class="text-gray-500">Status:</span> ${B(d.status)}</div>`+
+      `<div><span class="text-gray-500">Source:</span> ${src}</div>`+
+      `<div><span class="text-gray-500">Round:</span> R${d.refinement_round}/${d.max_refinement_rounds}</div>`+
+      `<div><span class="text-gray-500">FPs:</span> ${d.fp_count||0} confirmed, ${d.suspicious_fp_count||0} suspicious</div>`+
+      (d.rejection_reason?`<div class="col-span-2"><span class="text-gray-500">Rejection:</span> <span class="text-red-300">${d.rejection_reason}</span></div>`:'')+
+      `<div><span class="text-gray-500">Created:</span> ${T(d.created_at)}</div>`+
+      `<div><span class="text-gray-500">Updated:</span> ${T(d.updated_at)}</div>`;
+    // Version history
+    let vh='';
+    const versions=d.versions||[];
+    const jobs=d.retrohunt_jobs||[];
+    if(versions.length>0||jobs.length>0){
+      vh='<h4 class="text-xs text-gray-500 mb-2 mt-2">Retrohunt Chronology</h4><div class="space-y-2">';
+      const maxR=Math.max(versions.length,jobs.length,...versions.map(v=>v.round_number+1),...jobs.map(j=>j.round_number+1),0);
+      for(let i=0;i<maxR;i++){
+        const v=versions.find(x=>x.round_number===i);
+        const j=jobs.find(x=>x.round_number===i&&x.corpus!=='goodware');
+        const st=j?j.status:'pending';
+        const matches=j?j.num_matches:0;
+        const fp=v?v.fp_count:0;
+        const sfp=v?v.suspicious_fp_count:0;
+        const vtName=j?j.rule_name_on_vt:(v?v.rule_name_on_vt:'');
+        const icon=st==='finished'?(fp>0?'&#10060;':'&#9989;'):st==='aborted_cap'?'&#9888;':'&#9203;';
+        const stBadge=B(fp===0&&st==='finished'?'approved':fp>0?'rejected':st);
+        vh+=`<div class="card p-3 text-xs">`;
+        vh+=`<div class="flex items-center gap-2 mb-1"><span class="font-bold text-indigo-300">R${i}</span> ${icon} ${stBadge} <span class="text-gray-500">matches: ${matches}</span> <span class="text-gray-500">FP: ${fp}c/${sfp}s</span></div>`;
+        if(vtName)vh+=`<div class="text-gray-500">VT: ${vtName}</div>`;
+        if(j&&j.submitted_at)vh+=`<div class="text-gray-600">${T(j.submitted_at)} - ${T(j.finished_at)||'running'}</div>`;
+        if(v)vh+=`<details class="mt-1"><summary class="text-indigo-400 cursor-pointer">View R${i} rule text</summary><pre class="rt mt-1" style="max-height:200px">${v.rule_text||'(empty)'}</pre></details>`;
+        vh+=`</div>`;
+      }
+      vh+='</div>';
+    }
+    document.getElementById('rm-versions').innerHTML=vh;
+    document.getElementById('rm-rule').textContent=d.rule_text||'(no rule text)';
+    document.getElementById('rmo').classList.add('show');
+  }catch(e){console.error('rule',e);}
 }
-function closeModal(){document.getElementById('rule-modal').classList.remove('show');}
-document.getElementById('rule-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function cmo(){document.getElementById('rmo').classList.remove('show');}
+document.getElementById('rmo').addEventListener('click',function(e){if(e.target===this)cmo();});
+document.getElementById('smo').addEventListener('click',function(e){if(e.target===this)e.target.classList.remove('show');});
 
-// --- Init + auto-refresh ---
-async function refreshAll(){
-  await Promise.all([loadOverview(),loadTimeline(),loadPipelineChart(),loadRecent()]);
-}
+async function refreshAll(){await Promise.all([lOver(),lWeekly(),lTime(),lPipeChart(),lRecent()]);}
 refreshAll();
-setInterval(refreshAll,REFRESH_MS);
+setInterval(refreshAll,R);
 </script>
-</body>
-</html>
+</body></html>
