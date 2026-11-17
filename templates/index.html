@@ -88,7 +88,7 @@ pre.rule-text{background:#0f0a2e;border:1px solid rgba(99,102,241,0.2);border-ra
     </div>
     <div class="card p-4 flex items-center gap-4">
       <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 text-lg">&#9989;</div>
-      <div><div class="text-lg font-bold" id="s-yara-approved">0</div><div class="text-xs text-gray-500">YARA Approved</div></div>
+      <div><div class="text-lg font-bold" id="s-yara-approved">0</div><div class="text-xs text-gray-500">Zintel YARA</div></div>
     </div>
   </div>
 
@@ -202,7 +202,7 @@ async function loadOverview(){
     document.getElementById('s-avgtime').textContent=d.performance.avg_analysis_sec+'s';
     document.getElementById('s-tokens').textContent=fmtNum(d.performance.total_llm_tokens);
     document.getElementById('s-failed').textContent=fmtNum(d.samples.failed+d.samples.corrupt);
-    document.getElementById('s-yara-approved').textContent=fmtNum(d.yara_registry.approved);
+    document.getElementById('s-yara-approved').textContent=fmtNum(d.yara_registry.zintel_approved||0);
     document.getElementById('last-update').textContent='Updated '+new Date().toLocaleTimeString();
   }catch(e){console.error('overview',e);}
 }
