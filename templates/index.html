@@ -64,11 +64,11 @@ pre.rule-text{background:#0f0a2e;border:1px solid rgba(99,102,241,0.2);border-ra
     </div>
     <div class="card glow p-5 text-center">
       <div class="stat-num" id="s-yara">0</div>
-      <div class="text-xs text-gray-400 mt-1">YARA Created</div>
+      <div class="text-xs text-gray-400 mt-1">YARA Rules <span class="text-gray-600" id="s-yara-total"></span></div>
     </div>
     <div class="card glow p-5 text-center">
       <div class="stat-num" id="s-snort">0</div>
-      <div class="text-xs text-gray-400 mt-1">Suricata Created</div>
+      <div class="text-xs text-gray-400 mt-1">Suricata Rules <span class="text-gray-600" id="s-snort-total"></span></div>
     </div>
   </div>
 
@@ -211,8 +211,8 @@ async function loadOverview(){
     document.getElementById('s-malicious').textContent=fmtNum(d.samples.malicious);
     document.getElementById('s-suspicious').textContent=fmtNum(d.samples.suspicious);
     document.getElementById('s-clean').textContent=fmtNum(d.samples.clean);
-    document.getElementById('s-yara').textContent=fmtNum(d.signatures.yara);
-    document.getElementById('s-snort').textContent=fmtNum(d.signatures.snort);
+    document.getElementById('s-yara').textContent=fmtNum(d.signatures.yara_files||d.signatures.yara);
+    document.getElementById('s-snort').textContent=fmtNum(d.signatures.suricata_files||d.signatures.snort);
     document.getElementById('s-avgtime').textContent=d.performance.avg_analysis_sec+'s';
     document.getElementById('s-tokens').textContent=fmtNum(d.performance.total_llm_tokens);
     document.getElementById('s-failed').textContent=fmtNum(d.samples.failed+d.samples.corrupt);

@@ -61,9 +61,13 @@ def api_overview():
     yt=yd+ya+yr+yh+ys+yrf
     zintel_count=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE source=? AND status=?",("zintel","approved"))
     suri=len(glob.glob(os.path.join(SNORT_DIR,"*.rules"))) if os.path.isdir(SNORT_DIR) else 0
+    _yd=os.path.join(ANDROAI_DIR,"generated_rules","yara")
+    _cd=os.path.join(ANDROAI_DIR,"generated_rules","cif")
+    yara_files=len(glob.glob(os.path.join(_yd,"*.yara"))) if os.path.isdir(_yd) else 0
+    cif_files=len(glob.glob(os.path.join(_cd,"*.json"))) if os.path.isdir(_cd) else 0
     return jsonify({"samples":{"total":total,"done":done,"malicious":mal,"suspicious":sus,
         "clean":cln,"failed":fail,"corrupt":cor},
-        "signatures":{"yara":yc,"snort":sc,"cif":cc,"suricata_files":suri},
+        "signatures":{"yara":yc,"snort":sc,"cif":cc,"yara_files":yara_files,"suricata_files":suri,"cif_files":cif_files},
         "yara_registry":{"total":yt,"draft":yd,"approved":ya,"rejected":yr,
             "retrohunting":yh,"superseded":ys,"refining":yrf,"zintel_approved":zintel_count},
         "performance":{"avg_analysis_sec":round(float(at),1),"total_llm_tokens":int(tk)}})
