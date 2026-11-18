@@ -56,7 +56,7 @@ def api_overview():
     cc=_s(LDB,"SELECT COUNT(*) FROM analyzed_samples WHERE cif_created=1")
     at=_s(LDB,"SELECT COALESCE(AVG(analysis_time_sec),0) FROM analyzed_samples WHERE status=?",("done",))
     tk=_s(LDB,"SELECT COALESCE(SUM(llm_total_tokens),0) FROM analyzed_samples")
-    def _yc(st):return _s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND (source!=? OR source IS NULL)",(st,"zintel"))
+    def _yc(st):return _s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE status=? AND COALESCE(source,'')!='zintel'",(st,))
     yd=_yc("draft");ya=_yc("approved");yr=_yc("rejected");yh=_yc("retrohunting");ys=_yc("superseded");yrf=_yc("refining")
     yt=yd+ya+yr+yh+ys+yrf
     zintel_count=_s(YDB,"SELECT COUNT(*) FROM yara_rules WHERE source=? AND status=?",("zintel","approved"))
@@ -110,11 +110,11 @@ def api_signatures():
         return jsonify(_q(YDB,"SELECT rule_id,rule_name,family,category,status,"
             "refinement_round,max_refinement_rounds,fp_count,suspicious_fp_count,"
             "rejection_reason,source,created_at,updated_at,rule_text "
-            "FROM yara_rules WHERE status=? AND (source!=? OR source IS NULL) ORDER BY updated_at DESC LIMIT ?",(sf,"zintel",lim)))
+            "FROM yara_rules WHERE status=? AND COALESCE(source,'')!='zintel' ORDER BY updated_at DESC LIMIT ?",(sf,lim)))
     return jsonify(_q(YDB,"SELECT rule_id,rule_name,family,category,status,"
         "refinement_round,max_refinement_rounds,fp_count,suspicious_fp_count,"
         "rejection_reason,source,created_at,updated_at,rule_text "
-        "FROM yara_rules WHERE (source!=? OR source IS NULL) ORDER BY updated_at DESC LIMIT ?",("zintel",lim)))
+        "FROM yara_rules WHERE COALESCE(source,'')!='zintel' ORDER BY updated_at DESC LIMIT ?",(lim,)))
 
 @app.route("/api/signature/<rule_id>")
 def api_signature_detail(rule_id):
